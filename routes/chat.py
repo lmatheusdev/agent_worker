@@ -13,7 +13,7 @@ class AgentResponse(BaseModel):
 @router.post("/chat/send")
 async def chat(payload: UserMessage):
     try:
-        reply = run_agent(payload.message)
+        reply = await run_agent(payload.message)
         return {"reply": reply}
 
     except Exception as e:

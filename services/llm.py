@@ -1,53 +1,31 @@
 import os
 from dotenv import load_dotenv
-from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
+import time
 
 
 load_dotenv()
 api_Key = os.getenv("OPENAI_API_KEY")
 
-loader = DirectoryLoader(
-    path="docs/",
-    glob="**/*.pdf",
-    loader_cls=PyPDFLoader
+BASE_DIR = os.path.dirname(__file__)
+VECTOR_DIR = os.path.join(BASE_DIR, "../rag/vectorstore")
+
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
 )
-
-documents = loader.load()
-
-splitter = RecursiveCharacterTextSplitter(
-    chunk_size=800,
-    chunk_overlap=100
-)
-
-chunks = splitter.split_documents(documents)
-
-
-embeddings = GoogleGenerativeAIEmbeddings( # chama o modelo de ia responsavel por gerar os embeddings
-    model="models/gemini-embedding-001",
-    google_api_key= api_Key
-)
-
-vectorstore = FAISS.from_documents(
-    chunks,
-    embeddings
-)
-
-vectorstore.save_local("faiss_index")
 
 vectorstore = FAISS.load_local(
-    "faiss_index",
+    VECTOR_DIR,
     embeddings,
     allow_dangerous_deserialization=True
 )
 
-retriever = vectorstore.as_retriever(
-    search_kwargs={"k": 4}
-)
 
 llm = ChatGoogleGenerativeAI( # cria a ia
     model="gemini-2.5-flash", # modelo da ia
@@ -55,30 +33,34 @@ llm = ChatGoogleGenerativeAI( # cria a ia
     api_key= api_Key # chave da api
 )
 
-prompt = ChatPromptTemplate.from_template("""
-Você é um atendente de service desk.
-Use APENAS o contexto abaixo para responder.
-Se a resposta não estiver no PDF, diga que não encontrou a informação.
+def retrieve_context(query: str, min_score: float = 0.35):
+    results = vectorstore.similarity_search_with_score(query, k=4)
+
+    filtered_docs = [
+        doc for doc, score in results if score >= min_score
+    ]
+    return "\n\n".join(d.page_content for d in filtered_docs)
+
+async def run_agent(user_message: str):
+    context = retrieve_context(user_message)
+
+    if not context:
+        return (
+            "Não encontrei essa informação nos documentos disponíveis. "
+            "Posso te ajudar com outra dúvida?"
+        )
+
+    prompt = f"""
+Você é um agente de Service Desk.
+Responda de forma objetiva e clara.
+Use SOMENTE o contexto abaixo.
 
 Contexto:
 {context}
 
-Pergunta:
-{question}
-""")
-
-rag_chain = (
-    {
-        "context": retriever,
-        "question": RunnablePassthrough()
-    }
-    | prompt
-    | llm
-)
+Pergunta do usuário:
+{user_message}
 """
-response = rag_chain.invoke("Posso reembolsar a internet?")
-print(response.content)"""
 
-def run_agent(user_message: str) -> str:
-    resposta_final = rag_chain.invoke({user_message})
-    return resposta_final.content
+    response = await llm.ainvoke(prompt)
+    return response.content
