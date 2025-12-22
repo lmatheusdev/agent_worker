@@ -1,13 +1,9 @@
 import os
 from dotenv import load_dotenv
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.document_loaders import PyMuPDFLoader
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-import time
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 
 
 load_dotenv()
@@ -16,22 +12,40 @@ api_Key = os.getenv("OPENAI_API_KEY")
 BASE_DIR = os.path.dirname(__file__)
 VECTOR_DIR = os.path.join(BASE_DIR, "../rag/vectorstore")
 
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
+embeddings = None
+vectorstore = None
+llm = None
 
-vectorstore = FAISS.load_local(
-    VECTOR_DIR,
-    embeddings,
-    allow_dangerous_deserialization=True
-)
+def init_rag():
+    global embeddings, vectorstore, llm
+
+    if embeddings is None:
+        print("Carregando modelo de embeddings...")
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        )
+
+    if vectorstore is None:
+        print("Carregando vectorstore...")
+        vectorstore = FAISS.load_local(
+            VECTOR_DIR,
+            embeddings,
+            allow_dangerous_deserialization=True
+        )
+
+    if llm is None:
+        print("Inicializando LLM...")
+        llm = ChatGoogleGenerativeAI( # cria a ia
+            model="gemini-2.5-flash", # modelo da ia
+            temperature=0.0, # temperatura da ia
+            api_key= api_Key # chave da api
+        )
+
+    vectorstore.similarity_search("warmup", k=1)
+    print("RAG inicializado com sucesso")
 
 
-llm = ChatGoogleGenerativeAI( # cria a ia
-    model="gemini-2.5-flash", # modelo da ia
-    temperature=0.0, # temperatura da ia
-    api_key= api_Key # chave da api
-)
+
 
 def retrieve_context(query: str, min_score: float = 0.35):
     results = vectorstore.similarity_search_with_score(query, k=4)

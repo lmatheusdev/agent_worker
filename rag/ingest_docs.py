@@ -1,30 +1,39 @@
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain_community.document_loaders import PyMuPDFLoader
+from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 import os
-import time
 
 load_dotenv()
 api_Key = os.getenv("OPENAI_API_KEY")
 
 BASE_DIR = os.path.dirname(__file__)
-PDF_DIR = os.path.join(BASE_DIR, "data")
+MD_DIR = os.path.join(BASE_DIR, "data")
 VECTOR_DIR = os.path.join(BASE_DIR, "vectorstore")
 
-pdf_files = ["manual1.pdf", "manual2.pdf"]
+os.makedirs(VECTOR_DIR, exist_ok=True)
+
+md_files = ["atendimento.md", "financeiro.md"]
+
 docs = []
 
-for pdf in pdf_files:
-    loader = PyMuPDFLoader(os.path.join(PDF_DIR, pdf))
+for md in md_files:
+    path = os.path.join(MD_DIR, md)
+    loader = TextLoader(path, encoding="utf-8")
     docs.extend(loader.load())
 
 splitter = RecursiveCharacterTextSplitter(
-    chunk_size=800,
-    chunk_overlap=150,
-    separators=["\n\n", "\n", ".", " ", ""]
+    chunk_size=700,
+    chunk_overlap=120,
+    separators=[
+        "\n## ",   # seções
+        "\n### ",
+        "\n\n",
+        "\n",
+        ". ",
+        " "
+    ]
 )
 
 chunks = splitter.split_documents(docs)
