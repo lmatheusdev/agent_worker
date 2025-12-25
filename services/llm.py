@@ -55,8 +55,14 @@ def retrieve_context(query: str, min_score: float = 0.35):
     ]
     return "\n\n".join(d.page_content for d in filtered_docs)
 
-async def run_agent(user_message: str):
-    context = retrieve_context(user_message)
+def format_history(chat_history):
+    return "\n".join(
+        f"{m['role']}: {m['content']}"
+        for m in chat_history
+    )
+
+async def run_agent(question: str, chat_history: list):
+    context = retrieve_context(question)
 
     if not context:
         return (
@@ -65,15 +71,21 @@ async def run_agent(user_message: str):
         )
 
     prompt = f"""
-Você é um agente de Service Desk.
-Responda de forma objetiva e clara.
-Use SOMENTE o contexto abaixo.
+Você é um agente que deve atuar como assistente de atendimento para os colabores da RDF Telecom.
+Quando o contexto contiver tabelas, extraia e interprete os valores para responder de forma clara e direta.
+Se houver múltiplos valores, apresente um resumo objetivo.
+Responda de forma clara, objetiva e mantendo coerência com a conversa.
+Responda usando o histórico de conversa e o contexto abaixo.
+
+
+Histórico de conversa:
+{format_history(chat_history)}
 
 Contexto:
 {context}
 
-Pergunta do usuário:
-{user_message}
+Pergunta atual do usuário:
+{question}
 """
 
     response = await llm.ainvoke(prompt)

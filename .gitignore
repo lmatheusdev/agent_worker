@@ -5,5 +5,3 @@ data/
 faiss_index/
 __pycache__/
 *.pyc
-*.pkl
-*.faiss
