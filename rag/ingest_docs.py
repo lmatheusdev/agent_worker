@@ -8,11 +8,11 @@ import os
 load_dotenv()
 api_Key = os.getenv("OPENAI_API_KEY")
 
-BASE_DIR = os.path.dirname(__file__)
+BASE_DIR = os.path.dirname(__file__) 
 MD_DIR = os.path.join(BASE_DIR, "data")
-VECTOR_DIR = os.path.join(BASE_DIR, "vectorstore")
+VECTOR_DIR = os.path.join(BASE_DIR, "vectorstore") 
 
-os.makedirs(VECTOR_DIR, exist_ok=True)
+os.makedirs(VECTOR_DIR, exist_ok=True) # garante que o diretório exista
 
 md_files = ["atendimento.md", "financeiro.md"]
 
@@ -27,7 +27,7 @@ splitter = RecursiveCharacterTextSplitter(
     chunk_size=700,
     chunk_overlap=120,
     separators=[
-        "\n## ",   # seções
+        "\n## ",
         "\n### ",
         "\n|",
         "\n\n",
