@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes.chat import router as chat_router
-from services.llm import init_rag
+from .routes.chat import router as chat_router
+from .services.llm import init_rag
 import uvicorn
 import os
 
@@ -9,7 +9,8 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def startup_event():
-    init_rag()
+    # init_rag()
+    pass
 
 # CORS
 app.add_middleware(
