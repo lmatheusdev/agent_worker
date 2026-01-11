@@ -1,16 +1,23 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes.chat import router as chat_router
-from .services.llm import init_rag
+from routes.chat import router as chat_router
+from services.llm import init_rag
 import uvicorn
 import os
+import asyncio
 
 app = FastAPI()
 
+"""@app.on_event("startup")
+async def startup_event():
+    init_rag()
+    pass
+"""
+
+
 @app.on_event("startup")
 async def startup_event():
-    # init_rag()
-    pass
+    asyncio.create_task(asyncio.to_thread(init_rag))
 
 # CORS
 app.add_middleware(
