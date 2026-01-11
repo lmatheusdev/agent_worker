@@ -17,12 +17,13 @@ async def startup_event():
 
 @app.on_event("startup")
 async def startup_event():
-    asyncio.create_task(asyncio.to_thread(init_rag))
-
+    #asyncio.create_task(asyncio.to_thread(init_rag))
+    print("Iniciando sem o RAG para teste de conexão...")
+    
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # React + Vite
+    allow_origins=["*"],  # React + Vite
     allow_credentials=True,
     allow_methods=["*"],  # POST, GET, OPTIONS, etc
     allow_headers=["*"], 
