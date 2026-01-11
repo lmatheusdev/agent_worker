@@ -1,16 +1,19 @@
 import os
 from dotenv import load_dotenv
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI
-
-
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
 load_dotenv()
-api_Key = os.getenv("OPENAI_API_KEY")
+API_KEY = os.getenv("OPENAI_API_KEY")
+HF_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 BASE_DIR = os.path.dirname(__file__)
 VECTOR_DIR = os.path.join(BASE_DIR, "../rag/vectorstore")
+
+if not API_KEY:
+    print("AVISO: API_KEY não encontrada!")
 
 embeddings = None
 vectorstore = None
@@ -21,8 +24,9 @@ def init_rag():
 
     if embeddings is None:
         print("Carregando modelo de embeddings...")
-        embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        embeddings = HuggingFaceEndpointEmbeddings(
+            huggingfacehub_api_token=HF_API_KEY, 
+            model="sentence-transformers/all-MiniLM-L6-v2",
         )
 
     if vectorstore is None:
@@ -38,11 +42,14 @@ def init_rag():
         llm = ChatGoogleGenerativeAI( # cria a ia
             model="gemini-2.5-flash", # modelo da ia
             temperature=0.0, # temperatura da ia
-            api_key= api_Key # chave da api
+            api_key= API_KEY # chave da api
         )
 
-    vectorstore.similarity_search("warmup", k=1)
-    print("RAG inicializado com sucesso")
+    try:
+        vectorstore.similarity_search("warmup", k=1)
+        print("RAG inicializado com sucesso")
+    except Exception as e:
+        print("Erro ao inicializar o RAG:", str(e))
 
 
 

@@ -1,4 +1,4 @@
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -7,6 +7,7 @@ import os
 
 load_dotenv()
 api_Key = os.getenv("OPENAI_API_KEY")
+hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
 
 BASE_DIR = os.path.dirname(__file__) 
 MD_DIR = os.path.join(BASE_DIR, "data")
@@ -39,9 +40,10 @@ splitter = RecursiveCharacterTextSplitter(
 
 chunks = splitter.split_documents(docs)
 
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
+embeddings = HuggingFaceEndpointEmbeddings(
+            huggingfacehub_api_token=hf_api_key, 
+            model="sentence-transformers/all-MiniLM-L6-v2",
+        )
 
 vectorstore = FAISS.from_documents(
     chunks,
