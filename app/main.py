@@ -1,25 +1,31 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.chat import router as chat_router
-from services.llm import init_rag
 import uvicorn
 import os
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 app = FastAPI()
 
+executor = ThreadPoolExecutor(max_workers=1)
+
+def background_warmup():
+    try:
+        from services.llm import init_rag, vectorstore
+        init_rag()
+        if vectorstore:
+            # Força a API do Hugging Face a acordar logo no boot
+            vectorstore.similarity_search("olá", k=1)
+            print("Hugging Face API acordada com sucesso!")
+    except Exception as e:
+        print(f"Erro no warmup silencioso: {e}")
+
 @app.on_event("startup")
 async def startup_event():
-    init_rag()
-    pass
-
-
-
-"""@app.on_event("startup")
-async def startup_event():
-    asyncio.create_task(asyncio.to_thread(init_rag))
-    print("Iniciando sem o RAG para teste de conexão...")
-"""
+    # Isso dispara o warmup em uma thread separada
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(executor, background_warmup)
 
 # CORS
 app.add_middleware(
