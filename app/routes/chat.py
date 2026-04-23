@@ -39,7 +39,7 @@ async def chat(payload: UserMessage):
         if coords:
             lat, lon = coords
 
-            nearest = get_nearest_service_point(lat, lon)
+            nearest = await get_nearest_service_point(lat, lon)
 
             reply = (
                 f"O ponto de atendimento mais próximo é "
