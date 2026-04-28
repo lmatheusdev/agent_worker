@@ -67,6 +67,6 @@ async def get_nearest_service_point(user_lat, user_lon):
 
     return {
         "nome_cto": nearest_ponto["nome_cto"],
-        "distancia_km": round(min_real_dist / 1000, 2), # Converte metros para km
-        "viabilidade": "Alta" if min_real_dist < 300 else "Baixa" # Exemplo de regra de negócio
+        "distancia_m": min_real_dist,
+        "viabilidade": "Alta" if min_real_dist < 150 else "Média" if min_real_dist < 300 else "Baixa"
     }

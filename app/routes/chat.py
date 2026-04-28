@@ -42,9 +42,10 @@ async def chat(payload: UserMessage):
             nearest = await get_nearest_service_point(lat, lon)
 
             reply = (
-                f"O ponto de atendimento mais próximo é "
-                f"{nearest['nome_cto']} "
-                f"({nearest['distancia_km']} km de você)."
+                f"O ponto de atendimento mais próximo é:  "
+                f"\n{nearest['nome_cto']}  "
+                f"(a {nearest['distancia_m']} metros).  "
+                f"\nViabilidade de atendimento: {nearest['viabilidade']}."
             )
 
             # salva resposta do agente
